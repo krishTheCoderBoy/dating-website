@@ -29,7 +29,7 @@ export const register = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
     // Send welcome email
-    const  mailOptions = {
+    const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: email,
       subject: 'Welcome to Our Service!',
@@ -39,8 +39,11 @@ export const register = async (req, res) => {
     console.log(process.env.SMTP_USER, process.env.SMTP_PASS, process.env.SENDER_EMAIL);
     return res.status(201).json({ success: true, message: "User registered successfully" });
   } catch (err) {
+
+    console.log("hello world");
     return res.status(500).json({ success: false, error: err.message });
   }
+
 };
 
 // ----------------------
@@ -91,21 +94,21 @@ export const logout = async (req, res) => {
     });
     return res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message }); 
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
 
 export const sendVerifyOtp = async (req, res) => {
   try {
-    const {userId} = req.body;
+    const { userId } = req.body;
     const user = await userModel.findById(userId);
-    if(user.isVerified){
+    if (user.isVerified) {
       return res.status(400).json({ success: false, error: "User is already verified" });
     }
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     user.verifyOtp = otp;
-    user.verifyOtpExpiry = Date.now() + 10 * 60 * 1000; 
+    user.verifyOtpExpiry = Date.now() + 10 * 60 * 1000;
     await user.save();
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
@@ -122,19 +125,19 @@ export const sendVerifyOtp = async (req, res) => {
 
 
 export const verifyEmail = async (req, res) => {
-  const { userId,otp} = req.body;
-  if(!userId || !otp){
+  const { userId, otp } = req.body;
+  if (!userId || !otp) {
     return res.status(400).json({ success: false, error: "Please provide all the fields" });
   }
   try {
     const user = await userModel.findById(userId);
-    if(!user){
+    if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
     }
-    if(user.verifyOtp === '' || user.verifyOtp !== otp){
+    if (user.verifyOtp === '' || user.verifyOtp !== otp) {
       return res.status(400).json({ success: false, error: "Invalid OTP" });
     }
-    if(user.verifyOtpExpiry < Date.now()){
+    if (user.verifyOtpExpiry < Date.now()) {
       return res.status(400).json({ success: false, error: "OTP has expired" });
     }
     user.isVerified = true;
@@ -146,12 +149,12 @@ export const verifyEmail = async (req, res) => {
   catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
-  }
+}
 
 export const isAuthenticated = async (req, res) => {
-    try {
-      return res.status(200).json({ success: true, message: "User is authenticated" });
-    } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
-    }
+  try {
+    return res.status(200).json({ success: true, message: "User is authenticated" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
+}
