@@ -22,12 +22,15 @@ export const register = async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    // Instead of setting a cookie, attach token to header
+    res.setHeader("Authorization", `Bearer ${token}`);
+    /*     res.cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          maxAge: 24 * 60 * 60 * 1000,
+        }); */
+
     // Send welcome email
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
@@ -37,11 +40,11 @@ export const register = async (req, res) => {
     };
     await transporter.sendMail(mailOptions);
     console.log(process.env.SMTP_USER, process.env.SMTP_PASS, process.env.SENDER_EMAIL);
-    return res.status(201).json({ success: true, message: "User registered successfully" });
+    return res.status(201).json({ success: true, message: "User registered successfully", token });
   } catch (err) {
 
-    console.log("hello world");
-    return res.status(500).json({ success: false, error: err.message });
+    console.error("Registration error:", err);
+    return res.status(500).json({ success: false, error: `server error : ${err.message}` });
   }
 
 };
@@ -69,22 +72,19 @@ export const login = async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-   res.cookie("token", token, {
-  httpOnly: true,
-  secure: false,   // must be false on localhost (no https)
-  sameSite: "lax", // allow sending cookies between localhost:5173 and localhost:5000
-  maxAge: 24 * 60 * 60 * 1000,
-});
+    // --- Send token in header instead of cookie ---
+    res.setHeader("Authorization", `Bearer ${token}`);
 
-  return res.status(200).json({ 
-  success: true, 
-  message: "Login successful", 
-  token, 
-  user: { id: user._id, email: user.email } 
-});
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: { id: user._id, email: user.email }
+    });
 
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    console.error("Login error:", err);
+    return res.status(500).json({ success: false, error: "server error" });
   }
 };
 
@@ -93,11 +93,11 @@ export const login = async (req, res) => {
 // ----------------------
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-    });
+    /*     res.clearCookie("token", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        }); */
     return res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
@@ -158,67 +158,67 @@ export const verifyEmail = async (req, res) => {
 }
 
 export const isAuthenticated = async (req, res) => {
-    try {
-      return res.status(200).json({ success: true, message: "User is authenticated" });
-    } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
-    }
+  try {
+    return res.status(200).json({ success: true, message: "User is authenticated" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
+}
 
 
-  export const sendResetOtp = async (req, res) => {
-    const {email}=req.body;
-    if(!email){
-      return res.status(400).json({ success: false, error: "Please provide email" });
-    }
-    try {
-      const user=await userModel.findOne({email});
-      if(!user){
-        return res.status(404).json({ success: false, error: "User not found" });
-      }
-      const otp=String(Math.floor(100000 + Math.random() * 900000));
-      user.resetPasswordOtp=otp;
-      user.resetPasswordOtpExpiry=Date.now()+10*60*1000;
-      await user.save();
-      const mailOptions = {
-        from: process.env.SENDER_EMAIL,
-        to: user.email,
-        subject: 'Your Password Reset OTP',
-        text: `Hello ${user.name},\n\nYour OTP for password reset is ${otp}. It is valid for 10 minutes.\n\nBest regards,\nThe Team`
-      };
-      await transporter.sendMail(mailOptions);
-      return res.status(200).json({ success: true, message: "OTP sent to your email" });
-    } catch (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
+export const sendResetOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, error: "Please provide email" });
   }
-
-
-
-  export const resetPassword = async (req, res) => {
-    const {email,otp,newPassword}=req.body;
-    if(!email || !otp || !newPassword){
-      return res.status(400).json({ success: false, error: "Please provide all the fields" });
+  try {
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
     }
-    try {
-      const user=await userModel.findOne({email});
-      if(!user){
-        return res.status(404).json({ success: false, error: "User not found" });
-      }
-      if(user.resetPasswordOtp==='' || user.resetPasswordOtp!==otp){
-        return res.status(400).json({ success: false, error: "Invalid OTP" });
-      }
-      if(user.resetPasswordOtpExpiry<Date.now()){
-        return res.status(400).json({ success: false, error: "OTP has expired" });
-      }
-      const hashedPassword=await bcrypt.hash(newPassword,10);
-      user.password=hashedPassword;
-      user.resetPasswordOtp='';
-      user.resetPasswordOtpExpiry=0;
-      await user.save();
-      return res.status(200).json({ success: true, message: "Password reset successfully" });
-      
-    }catch (error) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.resetPasswordOtp = otp;
+    user.resetPasswordOtpExpiry = Date.now() + 10 * 60 * 1000;
+    await user.save();
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: user.email,
+      subject: 'Your Password Reset OTP',
+      text: `Hello ${user.name},\n\nYour OTP for password reset is ${otp}. It is valid for 10 minutes.\n\nBest regards,\nThe Team`
+    };
+    await transporter.sendMail(mailOptions);
+    return res.status(200).json({ success: true, message: "OTP sent to your email" });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
   }
+}
+
+
+
+export const resetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ success: false, error: "Please provide all the fields" });
+  }
+  try {
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+    if (user.resetPasswordOtp === '' || user.resetPasswordOtp !== otp) {
+      return res.status(400).json({ success: false, error: "Invalid OTP" });
+    }
+    if (user.resetPasswordOtpExpiry < Date.now()) {
+      return res.status(400).json({ success: false, error: "OTP has expired" });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordOtp = '';
+    user.resetPasswordOtpExpiry = 0;
+    await user.save();
+    return res.status(200).json({ success: true, message: "Password reset successfully" });
+
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
