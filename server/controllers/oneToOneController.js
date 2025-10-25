@@ -9,7 +9,7 @@ import mongoose from "mongoose";
  * Get list of one-to-one conversations for logged-in user (with last message)
  */
 export const getConversations = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.userId;
   // Find conversations where user is participant and populate last message
   const convs = await OneToOneConversation.find({ participants: userId })
     .populate({
@@ -31,7 +31,7 @@ export const getConversations = asyncHandler(async (req, res) => {
  */
 export const getOrCreateConversationMessages = asyncHandler(async (req, res) => {
   const otherUserId = req.params.userId;
-  const me = req.user._id;
+  const me = req.userId;
 
   if (!mongoose.Types.ObjectId.isValid(otherUserId)) {
     res.status(400);
@@ -74,7 +74,7 @@ export const getOrCreateConversationMessages = asyncHandler(async (req, res) => 
  */
 export const sendMessageToUser = asyncHandler(async (req, res) => {
   const otherUserId = req.params.userId;
-  const me = req.user._id;
+  const me = req.userId;
   const { content, type } = req.body;
   let payloadContent = content || "";
 
@@ -120,7 +120,7 @@ export const sendMessageToUser = asyncHandler(async (req, res) => {
  */
 export const recallMessage = asyncHandler(async (req, res) => {
   const { userId, messageId } = { userId: req.params.userId, messageId: req.params.messageId };
-  const me = req.user._id;
+  const me = req.userId;
 
   const message = await Message.findById(messageId);
   if (!message) {
@@ -153,7 +153,7 @@ export const recallMessage = asyncHandler(async (req, res) => {
  */
 export const setDisappearing = asyncHandler(async (req, res) => {
   const otherUserId = req.params.userId;
-  const me = req.user._id;
+  const me = req.userId;
   const { enabled, seconds } = req.body;
 
   let conv = await OneToOneConversation.findOne({ participants: { $all: [me, otherUserId], $size: 2 } });

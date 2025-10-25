@@ -107,7 +107,7 @@ export const logout = async (req, res) => {
 
 export const sendVerifyOtp = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId;
     const user = await userModel.findById(userId);
     if (user.isVerified) {
       return res.status(400).json({ success: false, error: "User is already verified" });
@@ -122,6 +122,7 @@ export const sendVerifyOtp = async (req, res) => {
       subject: 'Your Verification OTP',
       text: `Hello ${user.name},\n\nYour OTP for email verification is ${otp}. It is valid for 10 minutes.\n\nBest regards,\nThe Team`
     };
+    console.log(`the generated otp is ${otp}`);
     await transporter.sendMail(mailOptions);
     res.status(200).json({ success: true, message: "OTP sent to your email" });
   } catch (error) {
@@ -131,7 +132,8 @@ export const sendVerifyOtp = async (req, res) => {
 
 
 export const verifyEmail = async (req, res) => {
-  const { userId, otp } = req.body;
+  const userId = req.userId;
+  const { otp } = req.body;
   if (!userId || !otp) {
     return res.status(400).json({ success: false, error: "Please provide all the fields" });
   }

@@ -1,36 +1,8 @@
-/* import userModel from "../models/userModels.js";
-
-export const getUserData = async (req, res) => {
-    try {
-    console.log("👉 Request body in getUserData:", req.body);
-
-    const { userId } = req.body;
-    console.log("👉 Extracted userId:", userId);
-
-    const user = await userModel.findById(userId);
-    console.log("✅ User fetched from DB:", user);
-
-    if (!user) {
-      console.log("❌ User not found in DB");
-      return res.status(404).json({ success: false, error: "User not found" });
-    }
-
-    res.status(200).json({
-      success: true,
-      userData: { name: user.name, email: user.email, isVerified: user.isVerified },
-    });
-  } catch (error) {
-    console.error("❌ Error in getUserData:", error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
-}
- */
-
 import userModel from "../models/userModels.js";
 
 export const setUserProfile = async (req, res) => {
   try {
-    const userId = req.body.userId; // get it from route param
+    const userId = req.userId; // get it from route param
     const updates = req.body;
 
     // Validate required fields if this is a first-time setup
@@ -48,7 +20,7 @@ export const setUserProfile = async (req, res) => {
     );
 
     if (!updatedProfile) {
-      return res.status(404).json({ message: "User profile does not exist" });
+      return res.status(404).json({ message: "hello : User profile does not exist" });
     }
 
     return res.status(200).json({
@@ -71,7 +43,7 @@ export const setUserProfile = async (req, res) => {
 export const getUserProfile = async (req, res) => {
   try {
     // const { userId } = req.body; // expecting :userId in the route
-    const userId = req.body.userId; // get it from route param
+    const userId = req.userId; // get it from route param
     console.log("hello there , the decoded id is : ", userId);
     const profile = await userModel.findOne({ _id: userId }).lean();
 
@@ -91,7 +63,7 @@ export const getUserProfile = async (req, res) => {
 
 export const isProfileVerified = async (req, res) => {
   try {
-    const userId = req.body.userId; // get it from route param
+    const userId = req.userId; // get it from route param
     console.log(userId);
     const profile = await userModel.findOne({ _id: userId }).lean();
     if (!profile) {
@@ -99,7 +71,7 @@ export const isProfileVerified = async (req, res) => {
     }
     console.log(profile);
 
-    return res.status(200).json(profile.isVerified);
+    return res.status(200).json({ isVerified: profile.isVerified });
   } catch (error) {
     console.error("Error in checking user profile verified status:", error);
     return res.status(500).json({ message: "Server error" });

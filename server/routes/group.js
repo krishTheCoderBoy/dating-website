@@ -21,6 +21,6 @@ router.get("/groups", getGroupsForUser);
 router.get("/group/:groupId", getGroupMessages);
 router.post("/group/:groupId/send", upload.single("file"), sendGroupMessage);
 router.post("/group/:groupId/add-member", addGroupMember);
-router.post("/group/:groupId/recall/:messageId", recallGroupMessage);
+router.post("/group/:groupId/recall/:messageId", recallGroupMessage); // not done
 
 export default router;

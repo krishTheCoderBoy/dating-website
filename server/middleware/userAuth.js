@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 
 const userAuth = async (req, res, next) => {
   try {
-    console.log("\n\nthis is the userAuth middleware");
+    console.log("\n\nthis is the userAuth middleware : src/middlewares/userAuth.js");
     // --- Extract token from Authorization header ---
     const authHeader = req.headers.authorization;
 
@@ -35,8 +35,7 @@ const userAuth = async (req, res, next) => {
     console.log("✅ User ID from token:", decoded.id);
 
     // --- Attach user ID to request ---
-    req.body.userId = decoded.id;
-    console.log("✅ User ID from token:", decoded.id);
+    req.userId = decoded.id;
 
     next();
   } catch (err) {

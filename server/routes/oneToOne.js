@@ -16,7 +16,7 @@ router.use(userAuth);
 
 router.get("/conversations", getConversations);
 router.get("/conversation/:userId", getOrCreateConversationMessages);
-router.post("/conversation/:userId", upload.single("file"), sendMessageToUser);
+router.post("/conversation/:userId", upload.single("file"), sendMessageToUser); // not done
 router.post("/conversation/:userId/recall/:messageId", recallMessage);
 router.post("/conversation/:userId/disappearing", setDisappearing);
 

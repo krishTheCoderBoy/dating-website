@@ -1,4 +1,5 @@
 import asyncHandler from "express-async-handler";
+import userModel from "../models/userModels.js";
 import GroupConversation from "../models/GroupConversation.js";
 import Message from "../models/Message.js";
 import mongoose from "mongoose";
@@ -9,7 +10,8 @@ import mongoose from "mongoose";
  */
 export const createGroup = asyncHandler(async (req, res) => {
   const { name, participants = [] } = req.body;
-  const admin = req.user._id;
+  // const admin = req.user._id;
+  const admin = req.userId;
 
   if (!name) {
     res.status(400);
@@ -31,7 +33,8 @@ export const createGroup = asyncHandler(async (req, res) => {
  * Get groups for user
  */
 export const getGroupsForUser = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.userId;
+  console.log("\n\nthe userId is : ", userId);
   const groups = await GroupConversation.find({ participants: userId }).populate("participants", "username avatar");
   res.json(groups);
 });
@@ -52,7 +55,7 @@ export const getGroupMessages = asyncHandler(async (req, res) => {
     throw new Error("Group not found");
   }
   // basic membership check
-  if (!group.participants.some(id => id.equals(req.user._id))) {
+  if (!group.participants.some(id => id.equals(req.userId))) {
     res.status(403);
     throw new Error("Not a group member");
   }
@@ -85,7 +88,7 @@ export const getGroupMessages = asyncHandler(async (req, res) => {
 export const sendGroupMessage = asyncHandler(async (req, res) => {
   const groupId = req.params.groupId;
   const { content } = req.body;
-  const me = req.user._id;
+  const me = req.userId;
   const group = await GroupConversation.findById(groupId);
   if (!group) {
     res.status(404);
@@ -132,7 +135,7 @@ export const addGroupMember = asyncHandler(async (req, res) => {
   const { memberId } = req.body;
   const group = await GroupConversation.findById(groupId);
   if (!group) { res.status(404); throw new Error("Group not found"); }
-  if (!group.admin.equals(req.user._id)) { res.status(403); throw new Error("Only admin can add members"); }
+  if (!group.admin.equals(req.userId)) { res.status(403); throw new Error("Only admin can add members"); }
 
   if (!group.participants.some(id => id.equals(memberId))) {
     group.participants.push(memberId);
@@ -147,7 +150,7 @@ export const addGroupMember = asyncHandler(async (req, res) => {
  */
 export const recallGroupMessage = asyncHandler(async (req, res) => {
   const { groupId, messageId } = { groupId: req.params.groupId, messageId: req.params.messageId };
-  const me = req.user._id;
+  const me = req.userId;
 
   const message = await Message.findById(messageId);
   if (!message) { res.status(404); throw new Error("Message not found"); }
