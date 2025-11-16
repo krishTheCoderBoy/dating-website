@@ -1,5 +1,4 @@
 import asyncHandler from "express-async-handler";
-import userModel from "../models/userModels.js";
 import GroupConversation from "../models/GroupConversation.js";
 import Message from "../models/Message.js";
 import mongoose from "mongoose";

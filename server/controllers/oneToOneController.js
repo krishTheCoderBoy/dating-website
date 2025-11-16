@@ -1,7 +1,6 @@
 import asyncHandler from "express-async-handler";
 import OneToOneConversation from "../models/OneToOneConversation.js";
 import Message from "../models/Message.js";
-import User from "../models/userModels.js";
 import mongoose from "mongoose";
 
 /**

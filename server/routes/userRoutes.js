@@ -1,10 +1,26 @@
-import express from 'express';
-import userAuth from '../middleware/userAuth.js';
-import { getUserProfile, isProfileVerified, setUserProfile } from "../controllers/userController.js";
+import express from "express";
+import authMiddleware from "../middleware/authMiddleware.js";
+import {
+    isProfileFilled,
+    updateProfile,
+    updateProfilePhoto,
+    isDocUploaded,
+    uploadDocs,
+    updateDocs,
+    isProfileVerified
+} from "../controllers/userController.js";
 
-const userRouter = express.Router();
-userRouter.get('/data', userAuth, getUserProfile);
-userRouter.post('/set-profile', userAuth, setUserProfile);
-userRouter.get('/is-profile-verified', userAuth, isProfileVerified);
+const router = express.Router();
 
-export default userRouter;
+router.get("/is-profile-filled", authMiddleware, isProfileFilled);
+router.post("/update-profile", authMiddleware, updateProfile);
+
+router.post("/update-profile-photo", authMiddleware, updateProfilePhoto);
+
+router.get("/is-doc-uploaded", authMiddleware, isDocUploaded);
+router.post("/upload-docs", authMiddleware, uploadDocs);
+router.post("/update-docs", authMiddleware, updateDocs);
+
+router.get("/is-profile-verified", authMiddleware, isProfileVerified);
+
+export default router;
